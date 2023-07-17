@@ -27,12 +27,14 @@ def ganhos_mes_milha(df_original: DataFrame):
 
     df_sum = df_sum.withColumn(
         "AverageGains", col("GainsPerVendor")/col("DistanceTraveled"))
+    
+    df_sum.select("VendorId", "Month", "AverageGains").orderBy(
+    'VendorId', 'Month', ascending=True).show()
 
-    return df_sum
 
 def canceled_trips_month(df_sum: DataFrame, original_df: DataFrame):
     # GroupBy vazio para pegar media geral
-    col_total_avg = df_sum.groupBy().avg("AverageGains")
+    overall_avg = df_sum.groupBy().avg("AverageGains")
 
     # GroupBy para pegar media anual por VendorId
     df_sum = df_sum.groupBy("VendorId").avg(
@@ -40,7 +42,7 @@ def canceled_trips_month(df_sum: DataFrame, original_df: DataFrame):
 
     # Adicionar coluna de media geral anual
     df_with_avg = df_sum.withColumn("TotalAvg", lit(
-        col_total_avg.first()[0])).select(['VendorId', 'AnualAvgPerVendor', 'TotalAvg'])
+        overall_avg.first()[0])).select(['VendorId', 'AnualAvgPerVendor', 'TotalAvg'])
 
     # Join para manter apenas dados de Vendors que possuem media maior que a media geral
     df_with_avg = original_df.join(df_with_avg.where(
